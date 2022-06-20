@@ -1,6 +1,8 @@
 # offline-ucsd-map
 
-Version of the UCSD campus map (https://maps.ucsd.edu/) that works offline.
+Blazing fast[^1] ⚡ version of the UCSD campus map 🗺 (https://maps.ucsd.edu/) that works offline 🌳.
+
+[^1]: Obviously
 
 Goals:
 
