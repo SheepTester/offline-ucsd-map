@@ -9,7 +9,7 @@ git init
 git remote add origin $REMOTE
 git fetch origin --depth=1
 
-cp -a ../static/ .
+cp -a ../static/* .
 git reset --soft origin/gh-pages
 
 git checkout -b gh-pages
