@@ -31,5 +31,35 @@ Future goals:
 
 References for later:
 
-- Fetching map tile images: [Get UCSD map tiles](https://sheeptester.github.io/words-go-here/misc/ucsd-map.html) ([source](https://github.com/SheepTester/words-go-here/blob/master/misc/ucsd-map.html))
-- Interacting with the map: [Pan, rotate, and zoom an image](https://sheeptester.github.io/words-go-here/misc/pan-rotate-zoom.html) ([source](https://github.com/SheepTester/words-go-here/blob/master/misc/pan-rotate-zoom.html))
+- Fetching map tile images: [Get UCSD map tiles][ucsd-map] ([source][ucsd-map-src])
+- Interacting with the map: [Pan, rotate, and zoom an image][pan-rotate] ([source][pan-rotate-src])
+
+[ucsd-map]: https://sheeptester.github.io/words-go-here/misc/ucsd-map.html
+[ucsd-map-src]: https://github.com/SheepTester/words-go-here/blob/master/misc/ucsd-map.html
+[pan-rotate]: https://sheeptester.github.io/words-go-here/misc/pan-rotate-zoom.html
+[pan-rotate-src]: https://github.com/SheepTester/words-go-here/blob/master/misc/pan-rotate-zoom.html
+
+## Development
+
+Building requires [Deno] and [terser]. I use [nodemon] and [http-server], but alternatives probably exist.
+
+[deno]: https://deno.land/
+[terser]: https://terser.org/
+[nodemon]: https://nodemon.io/
+[http-server]: https://www.npmjs.com/package/http-server
+
+```sh
+# Install terser etc. (assumes you already have Deno)
+$ npm install --global terser nodemon http-server
+
+# Build
+$ ./scripts/build.sh
+
+# Watch for changes and rebuild (serve static/)
+$ nodemon --watch ./src/ --ext ts --exec ./scripts/build.sh
+# Local server
+$ http-server ./static/
+
+# Deploy
+$ ./scripts/deploy.sh
+```
