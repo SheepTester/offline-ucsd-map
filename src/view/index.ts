@@ -3,7 +3,7 @@
 /// <reference lib="deno.ns" />
 
 import { expect } from '../utils/expect.ts'
-import { identity, Transformation } from '../utils/transformation.ts'
+import { identity, toCss, Transformation } from '../utils/transformation.ts'
 
 /**
  * Scales and rotates about the origin THEN translates, so zooming in/out with
@@ -36,5 +36,14 @@ export class MapView {
     this.#context = this.#canvas.getContext('2d') ?? expect('Canvas context')
 
     this.view = identity
+  }
+
+  render () {
+    this.#context.save()
+
+    this.#context.transform(...toCss(this.view))
+    this.#context.fillRect(0, 0, 256, 256)
+
+    this.#context.restore()
   }
 }

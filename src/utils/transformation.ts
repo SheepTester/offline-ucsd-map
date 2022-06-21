@@ -49,3 +49,29 @@ export const identity: Transformation = {
   tx: 0,
   ty: 0
 }
+
+/**
+ * Unlike `Transformation`, CSS and Canvas2D use elements `a` through `f` for a
+ * transformation matrix `[a c e; b d f; 0 0 1]`. The order of the elements is
+ * not how I like to think about matrices, so unfortunately `b` and `c` are
+ * swapped.
+ */
+export type CssTransformation = [
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number
+]
+
+export function toCss ({
+  a,
+  b,
+  c,
+  d,
+  tx,
+  ty
+}: Transformation): CssTransformation {
+  return [a, c, b, d, tx, ty]
+}
