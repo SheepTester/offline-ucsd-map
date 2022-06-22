@@ -25,7 +25,7 @@ export function getVisibleTiles (
 ): PointMap<null> {
   // Untransform corners of bounding box to determine larger, unrotated bounding
   // box that circumscribes the view box
-  const viewBox = Rectangle.centered(view.width, view.height)
+  const viewBox = Rectangle.topLeft(view.width, view.height)
   const invTransf = inverse(transformation)
   const corners = viewBox.corners().map(pt => transform(invTransf, pt))
   const { min: minX, max: maxX } = extremes(corners.map(({ x }) => x))

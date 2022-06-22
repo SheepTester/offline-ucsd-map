@@ -60,8 +60,8 @@ export class MapView {
   }
 
   render () {
+    this.#context.clearRect(0, 0, this.#size.width, this.#size.height)
     this.#context.save()
-
     this.#context.transform(...toCss(this.view))
 
     this.#context.strokeStyle = 'green'

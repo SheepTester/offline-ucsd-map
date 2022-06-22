@@ -1,4 +1,4 @@
-import { Point } from './point.ts'
+import { Point, zero } from './point.ts'
 
 /**
  * Generally speaking, all rectangles in this project are inclusive lower bound,
@@ -26,6 +26,10 @@ export class Rectangle {
       { x: this.max.x, y: this.min.y },
       this.max
     ]
+  }
+
+  static topLeft (width: number, height: number): Rectangle {
+    return new Rectangle(zero, { x: width, y: height })
   }
 
   static centered (width: number, height: number): Rectangle {
