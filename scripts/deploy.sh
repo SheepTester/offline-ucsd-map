@@ -3,6 +3,8 @@
 REMOTE=$(git remote get-url origin)
 LAST_COMMIT=$(git rev-parse HEAD)
 
+./scripts/build.sh
+
 mkdir gh-pages-temp
 cd ./gh-pages-temp/
 git init
