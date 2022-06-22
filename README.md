@@ -57,7 +57,7 @@ $ ./scripts/build.sh
 
 # Watch for changes and rebuild (serve static/)
 $ nodemon --watch ./src/ --ext ts --exec ./scripts/build.sh
-# Local server
+# Local server to http://localhost:8080/
 $ http-server ./static/
 
 # Deploy

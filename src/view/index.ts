@@ -5,16 +5,11 @@
 import { expect } from '../utils/expect.ts'
 import { identity, toCss, Transformation } from '../utils/transformation.ts'
 
-/**
- * Scales and rotates about the origin THEN translates, so zooming in/out with
- * the same coordinates will zoom about the origin.
- */
-export type ViewOptions = {
-  zoom: number
-  /** Radians */
-  rotate: number
-  x: number
-  y: number
+export type MapViewOptions = {
+  /**
+   * Whether to use a higher quality canvas on retina displays. Default: true
+   */
+  highQuality: boolean
 }
 
 /**
@@ -27,23 +22,55 @@ export class MapView {
 
   #canvas: HTMLCanvasElement
   #context: CanvasRenderingContext2D
+  #observer: ResizeObserver
+  #size!: { width: number; height: number }
 
-  view: Transformation
+  view: Transformation = identity
+  options: MapViewOptions
 
-  constructor (wrapper: HTMLElement) {
+  constructor (
+    wrapper: HTMLElement,
+    { highQuality = true }: Partial<MapViewOptions> = {}
+  ) {
     this.#canvas = document.createElement('canvas')
     wrapper.append(this.#canvas)
     this.#context = this.#canvas.getContext('2d') ?? expect('Canvas context')
+    this.#observer = new ResizeObserver(this.#onResize)
+    this.#observer.observe(wrapper)
 
-    this.view = identity
+    this.options = { highQuality }
+  }
+
+  #onResize: ResizeObserverCallback = ([
+    {
+      borderBoxSize: [{ blockSize: height, inlineSize: width }]
+    }
+  ]) => {
+    if (this.options.highQuality) {
+      this.#canvas.width = width * window.devicePixelRatio
+      this.#canvas.height = height * window.devicePixelRatio
+      this.#context.scale(window.devicePixelRatio, window.devicePixelRatio)
+    } else {
+      this.#canvas.width = width
+      this.#canvas.height = height
+    }
+    this.#size = { width, height }
+    this.render()
   }
 
   render () {
     this.#context.save()
 
     this.#context.transform(...toCss(this.view))
-    this.#context.fillRect(0, 0, 256, 256)
+
+    this.#context.fillStyle = 'green'
+    this.#context.fillRect(256, 256, 256, 256)
 
     this.#context.restore()
+  }
+
+  destroy () {
+    this.#observer.disconnect()
+    this.#canvas.remove()
   }
 }
