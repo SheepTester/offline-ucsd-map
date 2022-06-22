@@ -68,7 +68,7 @@ export class MapView {
     this.#context.fillStyle = 'rgba(0, 255, 255, 0.1)'
     this.#context.lineWidth = 4
 
-    for (const { x, y } of getVisibleTiles(this.view, this.#size, 256).keys()) {
+    for (const { x, y } of getVisibleTiles(this.view, this.#size, 256)) {
       this.#context.fillRect(x, y, 256, 256)
       this.#context.strokeRect(x, y, 256, 256)
     }
