@@ -4,6 +4,7 @@
 
 import { expect } from '../utils/expect.ts'
 import { identity, toCss, Transformation } from '../utils/transformation.ts'
+import { getVisibleTiles } from './get-visible-tiles.ts'
 
 export type MapViewOptions = {
   /**
@@ -63,8 +64,14 @@ export class MapView {
 
     this.#context.transform(...toCss(this.view))
 
-    this.#context.fillStyle = 'green'
-    this.#context.fillRect(256, 256, 256, 256)
+    this.#context.strokeStyle = 'green'
+    this.#context.fillStyle = 'rgba(0, 255, 255, 0.1)'
+    this.#context.lineWidth = 4
+
+    for (const { x, y } of getVisibleTiles(this.view, this.#size, 256).keys()) {
+      this.#context.fillRect(x, y, 256, 256)
+      this.#context.strokeRect(x, y, 256, 256)
+    }
 
     this.#context.restore()
   }

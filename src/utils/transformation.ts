@@ -75,3 +75,28 @@ export function toCss ({
 }: Transformation): CssTransformation {
   return [a, c, b, d, tx, ty]
 }
+
+export type TransformationOptions = {
+  scale: number
+  rotate: number
+  translateX: number
+  translateY: number
+}
+
+export function transformation ({
+  scale = 1,
+  rotate = 0,
+  translateX = 0,
+  translateY = 0
+}: Partial<TransformationOptions> = {}): Transformation {
+  const cos = rotate === 0 ? 1 : Math.cos(rotate)
+  const sin = rotate === 0 ? 0 : Math.sin(rotate)
+  return {
+    a: scale * cos,
+    b: scale * sin,
+    c: -scale * sin,
+    d: scale * cos,
+    tx: translateX,
+    ty: translateY
+  }
+}
