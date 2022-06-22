@@ -31,6 +31,25 @@ export function inverse ({
   }
 }
 
+export function compose (...matrices: Transformation[]): Transformation {
+  if (matrices.length > 1) {
+    const [{ a, b, c, d, tx, ty }, ...rest] = matrices
+    const m = compose(...rest)
+    return {
+      a: a * m.a + b * m.c,
+      b: a * m.b + b * m.d,
+      c: c * m.a + d * m.c,
+      d: c * m.b + d * m.d,
+      tx: a * m.tx + b * m.ty + tx,
+      ty: c * m.tx + d * m.ty + ty
+    }
+  } else if (matrices.length === 1) {
+    return matrices[0]
+  } else {
+    return identity
+  }
+}
+
 export function transform (
   { a, b, c, d, tx, ty }: Transformation,
   { x, y }: Point
@@ -83,7 +102,7 @@ export type TransformationOptions = {
   translateY: number
 }
 
-export function transformation ({
+export function makeTransformation ({
   scale = 1,
   rotate = 0,
   translateX = 0,
@@ -99,4 +118,14 @@ export function transformation ({
     tx: translateX,
     ty: translateY
   }
+}
+
+export function scale (factor: number): Transformation {
+  return makeTransformation({ scale: factor })
+}
+export function rotate (angle: number): Transformation {
+  return makeTransformation({ rotate: angle })
+}
+export function translate ({ x, y }: Point): Transformation {
+  return makeTransformation({ translateX: x, translateY: y })
 }

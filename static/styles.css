@@ -40,6 +40,7 @@ a {
 .map-wrapper {
   flex: auto;
   position: relative;
+  touch-action: none;
 }
 .map-wrapper canvas {
   position: absolute;

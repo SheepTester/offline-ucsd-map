@@ -30,7 +30,7 @@ export class MapView {
   options: MapViewOptions
 
   constructor (
-    wrapper: HTMLElement,
+    wrapper: Element,
     { highQuality = true }: Partial<MapViewOptions> = {}
   ) {
     this.#canvas = document.createElement('canvas')
