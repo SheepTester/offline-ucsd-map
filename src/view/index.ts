@@ -84,7 +84,7 @@ export class MapView {
       tile
     } of getVisibleTiles(tileOptions, this.view, this.#size, tileSize)) {
       const image = this.#imageCache.request(
-        `${MapView.MAX_ZOOM - zoom}/${tile.x}/${tile.y}`
+        `${MapView.MAX_ZOOM - zoom}/${tile.x}/${-1 - tile.y}`
       )
       if (image) {
         this.#context.drawImage(image, x, y, tileSize, tileSize)

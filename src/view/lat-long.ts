@@ -7,7 +7,7 @@ export function latLongToPixel (latitude: number, longitude: number): Point {
   return {
     x: SCALE * (longitude / 180 + 1),
     y:
-      SCALE *
+      -SCALE *
       (Math.log(Math.tan(Math.PI / 4 + (latitude * Math.PI) / 360)) / Math.PI +
         1)
   }

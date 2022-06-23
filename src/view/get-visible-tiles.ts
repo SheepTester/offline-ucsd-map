@@ -128,7 +128,7 @@ export function getVisibleTiles (
       ) {
         tiles.push({
           rendered: { x, y },
-          tile: sum({ x: i, y: -j }, tileOffset)
+          tile: sum({ x: i, y: j }, tileOffset)
         })
       }
     }
