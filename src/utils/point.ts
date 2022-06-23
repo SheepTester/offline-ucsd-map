@@ -1,3 +1,7 @@
+/// <reference no-default-lib="true"/>
+/// <reference lib="dom" />
+/// <reference lib="deno.ns" />
+
 export type Point = {
   x: number
   y: number
@@ -33,6 +37,13 @@ export function scale ({ x, y }: Point, factor: number): Point {
 }
 export function average (...points: Point[]): Point {
   return scale(sum(...points), 0.5)
+}
+
+export function map (
+  { x, y }: Point,
+  transform: (component: number) => number
+): Point {
+  return { x: transform(x), y: transform(y) }
 }
 
 export function fromEvent (event: MouseEvent): Point {

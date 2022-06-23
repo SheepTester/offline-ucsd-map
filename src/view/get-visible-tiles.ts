@@ -1,5 +1,6 @@
 import { extremes } from '../utils/extremes.ts'
-import { difference, Point, sum } from '../utils/point.ts'
+import { mod } from '../utils/modulo.ts'
+import { difference, map, Point, sum } from '../utils/point.ts'
 import { Rectangle } from '../utils/rectangle.ts'
 import { inverse, transform, Transformation } from '../utils/transformation.ts'
 
@@ -44,27 +45,46 @@ function intersectsEdge (
   return 0 <= intersection && intersection <= under
 }
 
+export type TileOptions = {
+  origin: Point
+}
+
+export type Tile = {
+  rendered: Point
+  tile: Point
+}
+
 /**
  * In a grid of tiles of size `tileSize`, returns a set of the coordinates of
  * the top left corners of tiles that are within the visible bounding box of
- * size `view` (centered around the origin). Relative to the view box, the tiles
- * are transformed according to `transformation`.
+ * size `view` (with the origin at the top left corner of the screen). Relative
+ * to the view box, the tiles are transformed according to `transformation`.
  *
- * `tileSize` should be an integer for best results (for floating point
- * reasons).
+ * Tiles are assumed to be infinitely tiled squares where the origin (0, 0) is
+ * at `options.origin`, so the tile containing the origin is at
  */
 export function getVisibleTiles (
+  options: TileOptions,
   transformation: Transformation,
   view: Size,
   tileSize: number
-): Point[] {
+): Tile[] {
+  const offset = map(options.origin, component => -mod(component, tileSize))
+  const tileOffset = map(options.origin, component =>
+    Math.floor(component / tileSize)
+  )
+
   // Untransform corners of bounding box to determine larger, unrotated bounding
   // box that circumscribes the view box
   const viewBox = Rectangle.topLeft(view.width, view.height)
   const invTransf = inverse(transformation)
   const corners = viewBox.corners().map(pt => transform(invTransf, pt))
-  const { min: minX, max: maxX } = extremes(corners.map(({ x }) => x))
-  const { min: minY, max: maxY } = extremes(corners.map(({ y }) => y))
+  const { min: minX, max: maxX } = extremes(
+    corners.map(({ x }) => x - offset.x)
+  )
+  const { min: minY, max: maxY } = extremes(
+    corners.map(({ y }) => y - offset.y)
+  )
 
   /**
    * A more sophisticated rotated square to rectangle intersection test. Checks
@@ -84,7 +104,7 @@ export function getVisibleTiles (
     return false
   }
 
-  const tiles: Point[] = []
+  const tiles: Tile[] = []
 
   // For every vertex between tiles, check if it's in the view box
   const startX = Math.floor(minX / tileSize)
@@ -92,9 +112,9 @@ export function getVisibleTiles (
   const startY = Math.floor(minY / tileSize)
   const endY = Math.floor(maxY / tileSize) + 1
   for (let i = startX; i < endX; i++) {
-    const x = i * tileSize
+    const x = i * tileSize + offset.x
     for (let j = startY; j < endY; j++) {
-      const y = j * tileSize
+      const y = j * tileSize + offset.y
       const transformed = transform(transformation, { x, y })
       if (
         viewBox.contains(transformed) ||
@@ -103,7 +123,10 @@ export function getVisibleTiles (
           transform(transformation, { x: x + tileSize, y })
         )
       ) {
-        tiles.push({ x, y })
+        tiles.push({
+          rendered: { x, y },
+          tile: sum({ x: i, y: j }, tileOffset)
+        })
       }
     }
   }

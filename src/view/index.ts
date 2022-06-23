@@ -9,7 +9,12 @@ import {
   toCss,
   Transformation
 } from '../utils/transformation.ts'
-import { getVisibleTiles } from './get-visible-tiles.ts'
+import { getVisibleTiles, TileOptions } from './get-visible-tiles.ts'
+import { center } from './lat-long.ts'
+
+const tileOptions: TileOptions = {
+  origin: center
+}
 
 export type MapViewOptions = {
   /**
@@ -72,16 +77,23 @@ export class MapView {
     this.#context.strokeStyle = 'green'
     this.#context.lineWidth = 4
     this.#context.textBaseline = 'top'
-    this.#context.font = '16px Helvetica'
 
     const zoom = Math.max(Math.floor(-Math.log2(determinant(this.view)) / 2), 0)
     const tileSize = 2 ** zoom * 256
-    for (const { x, y } of getVisibleTiles(this.view, this.#size, tileSize)) {
+    this.#context.font = `${tileSize / 16}px Helvetica`
+    for (const {
+      rendered: { x, y },
+      tile
+    } of getVisibleTiles(tileOptions, this.view, this.#size, tileSize)) {
       this.#context.fillStyle = 'rgba(0, 255, 255, 0.1)'
       this.#context.fillRect(x, y, tileSize, tileSize)
       this.#context.strokeRect(x, y, tileSize, tileSize)
       this.#context.fillStyle = 'white'
-      this.#context.fillText(`${x}, ${y}`, x, y)
+      this.#context.fillText(
+        `${MapView.MAX_ZOOM - zoom}/${tile.x}/${tile.y}`,
+        x,
+        y
+      )
     }
 
     this.#context.restore()
