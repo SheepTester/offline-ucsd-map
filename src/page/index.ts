@@ -19,7 +19,8 @@ const interactive = new Interactive(wrapper, {
   set (transformation) {
     view.view = transformation
     view.render()
-  }
+  },
+  scrollMode: true
 })
 
 Object.assign(window, { view, interactive })

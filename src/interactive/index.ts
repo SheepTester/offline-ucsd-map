@@ -11,6 +11,7 @@ import {
 import {
   compose,
   makeTransformation,
+  rotate,
   scale,
   Transformation,
   translate
@@ -30,6 +31,19 @@ export interface TransformationProvider {
   set(transformation: Transformation): void
 }
 
+export type InteractiveOptions = {
+  /**
+   * Whether to use a very scroll-wheel-reliant interaction method for mouse
+   * users (true) or just to use scrolling for zooming (false).
+   *
+   * If true, then scrolling normally will pan the map. If shift is held,
+   * scrolling vertically will instead scroll horizontally. If control or
+   * command is held, then it'll zoom. If control/command and shift are held,
+   * then it'll rotate the map around the cursor.
+   */
+  scrollMode: boolean
+}
+
 export class Interactive {
   #wrapper: HTMLElement
   #pointer:
@@ -42,7 +56,12 @@ export class Interactive {
     | null = null
   #provider: TransformationProvider
 
-  constructor (wrapper: HTMLElement, provider: TransformationProvider) {
+  options: InteractiveOptions
+
+  constructor (
+    wrapper: HTMLElement,
+    provider: TransformationProvider & Partial<InteractiveOptions>
+  ) {
     this.#wrapper = wrapper
     this.#provider = provider
 
@@ -51,6 +70,9 @@ export class Interactive {
     this.#wrapper.addEventListener('pointerup', this.#handlePointerEnd)
     this.#wrapper.addEventListener('pointercancel', this.#handlePointerEnd)
     this.#wrapper.addEventListener('wheel', this.#handleWheel)
+
+    const { scrollMode = false } = provider
+    this.options = { scrollMode }
   }
 
   /**
@@ -154,14 +176,36 @@ export class Interactive {
 
   #handleWheel = (event: WheelEvent) => {
     const centre = this.#toWrapper(fromEvent(event))
-    this.#provider.set(
-      compose(
-        translate(centre),
-        scale(1.001 ** -event.deltaY),
-        translate(scaleVec(centre, -1)),
-        this.#provider.get()
+    if (!this.options.scrollMode || (event.ctrlKey && !event.shiftKey)) {
+      this.#provider.set(
+        compose(
+          translate(centre),
+          scale(1.001 ** -event.deltaY),
+          translate(scaleVec(centre, -1)),
+          this.#provider.get()
+        )
       )
-    )
+    } else if (event.ctrlKey && event.shiftKey) {
+      this.#provider.set(
+        compose(
+          translate(centre),
+          rotate(event.deltaY * 0.001),
+          translate(scaleVec(centre, -1)),
+          this.#provider.get()
+        )
+      )
+    } else {
+      this.#provider.set(
+        compose(
+          translate({
+            x: event.shiftKey ? -event.deltaY : -event.deltaX,
+            y: event.shiftKey ? 0 : -event.deltaY
+          }),
+          this.#provider.get()
+        )
+      )
+    }
+    event.preventDefault()
   }
 
   destroy () {
