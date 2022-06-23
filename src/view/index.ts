@@ -35,7 +35,7 @@ export class MapView {
   #canvas = document.createElement('canvas')
   #context = this.#canvas.getContext('2d') ?? expect('Canvas context')
   #observer = new ResizeObserver((...args) => this.#onResize(...args))
-  #size!: { width: number; height: number }
+  #size = { width: 0, height: 0 }
   #imageCache = new ImageCache(
     'https://assets.concept3d.com/assets/1005/1005_Maps/',
     () => this.render()
@@ -67,6 +67,9 @@ export class MapView {
       this.#canvas.width = width
       this.#canvas.height = height
     }
+    // Shift view by however much the center of the screen changed
+    this.view.tx += width / 2 - this.#size.width / 2
+    this.view.ty += height / 2 - this.#size.height / 2
     this.#size = { width, height }
     this.render()
   }
