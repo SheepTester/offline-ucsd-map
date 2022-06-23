@@ -116,8 +116,8 @@ export function makeTransformation ({
   const sin = rotate === 0 ? 0 : Math.sin(rotate)
   return {
     a: scale * cos,
-    b: scale * sin,
-    c: -scale * sin,
+    b: -scale * sin,
+    c: scale * sin,
     d: scale * cos,
     tx: translateX,
     ty: translateY

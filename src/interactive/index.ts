@@ -116,8 +116,7 @@ export class Interactive {
         this.#provider.set(
           compose(
             translate(centre),
-            // idk why the angle needs to be flipped
-            makeTransformation({ scale: scaleDiff, rotate: -angleDiff }),
+            makeTransformation({ scale: scaleDiff, rotate: angleDiff }),
             translate(difference(translation, centre)),
             pointer.transformation
           )
