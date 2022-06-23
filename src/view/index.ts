@@ -10,6 +10,7 @@ import {
   Transformation
 } from '../utils/transformation.ts'
 import { getVisibleTiles, TileOptions } from './get-visible-tiles.ts'
+import { ImageCache } from './image-cache.ts'
 import { center } from './lat-long.ts'
 
 const tileOptions: TileOptions = {
@@ -31,10 +32,14 @@ export class MapView {
   static MIN_ZOOM = 11
   static MAX_ZOOM = 20
 
-  #canvas: HTMLCanvasElement
-  #context: CanvasRenderingContext2D
-  #observer: ResizeObserver
+  #canvas = document.createElement('canvas')
+  #context = this.#canvas.getContext('2d') ?? expect('Canvas context')
+  #observer = new ResizeObserver((...args) => this.#onResize(...args))
   #size!: { width: number; height: number }
+  #imageCache = new ImageCache(
+    'https://assets.concept3d.com/assets/1005/1005_Maps/',
+    () => this.render()
+  )
 
   view: Transformation = identity
   options: MapViewOptions
@@ -43,10 +48,7 @@ export class MapView {
     wrapper: Element,
     { highQuality = true }: Partial<MapViewOptions> = {}
   ) {
-    this.#canvas = document.createElement('canvas')
     wrapper.append(this.#canvas)
-    this.#context = this.#canvas.getContext('2d') ?? expect('Canvas context')
-    this.#observer = new ResizeObserver(this.#onResize)
     this.#observer.observe(wrapper)
 
     this.options = { highQuality }
@@ -70,30 +72,23 @@ export class MapView {
   }
 
   render () {
+    // NOTE: Could consider not clearing to hide the lines between squares
     this.#context.clearRect(0, 0, this.#size.width, this.#size.height)
     this.#context.save()
     this.#context.transform(...toCss(this.view))
 
-    this.#context.strokeStyle = 'green'
-    this.#context.lineWidth = 4
-    this.#context.textBaseline = 'top'
-
     const zoom = Math.max(Math.floor(-Math.log2(determinant(this.view)) / 2), 0)
     const tileSize = 2 ** zoom * 256
-    this.#context.font = `${tileSize / 16}px Helvetica`
     for (const {
       rendered: { x, y },
       tile
     } of getVisibleTiles(tileOptions, this.view, this.#size, tileSize)) {
-      this.#context.fillStyle = 'rgba(0, 255, 255, 0.1)'
-      this.#context.fillRect(x, y, tileSize, tileSize)
-      this.#context.strokeRect(x, y, tileSize, tileSize)
-      this.#context.fillStyle = 'white'
-      this.#context.fillText(
-        `${MapView.MAX_ZOOM - zoom}/${tile.x}/${tile.y}`,
-        x,
-        y
+      const image = this.#imageCache.request(
+        `${MapView.MAX_ZOOM - zoom}/${tile.x}/${tile.y}`
       )
+      if (image) {
+        this.#context.drawImage(image, x, y, tileSize, tileSize)
+      }
     }
 
     this.#context.restore()

@@ -46,11 +46,11 @@ export class Interactive {
     this.#wrapper = wrapper
     this.#provider = provider
 
-    this.#wrapper.addEventListener('pointerdown', this.#onPointerDown)
-    this.#wrapper.addEventListener('pointermove', this.#onPointerMove)
-    this.#wrapper.addEventListener('pointerup', this.#onPointerEnd)
-    this.#wrapper.addEventListener('pointercancel', this.#onPointerEnd)
-    this.#wrapper.addEventListener('wheel', this.#onWheel)
+    this.#wrapper.addEventListener('pointerdown', this.#handlePointerDown)
+    this.#wrapper.addEventListener('pointermove', this.#handlePointerMove)
+    this.#wrapper.addEventListener('pointerup', this.#handlePointerEnd)
+    this.#wrapper.addEventListener('pointercancel', this.#handlePointerEnd)
+    this.#wrapper.addEventListener('wheel', this.#handleWheel)
   }
 
   /**
@@ -64,7 +64,7 @@ export class Interactive {
     )
   }
 
-  #onPointerDown = (event: PointerEvent) => {
+  #handlePointerDown = (event: PointerEvent) => {
     const point = fromEvent(event)
     const newState: PointerState = {
       id: event.pointerId,
@@ -91,7 +91,7 @@ export class Interactive {
     this.#wrapper.setPointerCapture(event.pointerId)
   }
 
-  #onPointerMove = (event: PointerEvent) => {
+  #handlePointerMove = (event: PointerEvent) => {
     const pointer = this.#pointer
     if (
       pointer?.id === event.pointerId ||
@@ -133,7 +133,7 @@ export class Interactive {
     }
   }
 
-  #onPointerEnd = (event: PointerEvent) => {
+  #handlePointerEnd = (event: PointerEvent) => {
     if (this.#pointer?.id === event.pointerId) {
       if (this.#pointer.other) {
         // Make other pointer primary pointer
@@ -153,7 +153,7 @@ export class Interactive {
     }
   }
 
-  #onWheel = (event: WheelEvent) => {
+  #handleWheel = (event: WheelEvent) => {
     const centre = this.#toWrapper(fromEvent(event))
     this.#provider.set(
       compose(
@@ -166,10 +166,10 @@ export class Interactive {
   }
 
   destroy () {
-    this.#wrapper.removeEventListener('pointerdown', this.#onPointerDown)
-    this.#wrapper.removeEventListener('pointermove', this.#onPointerMove)
-    this.#wrapper.removeEventListener('pointerup', this.#onPointerEnd)
-    this.#wrapper.removeEventListener('pointercancel', this.#onPointerEnd)
-    this.#wrapper.removeEventListener('wheel', this.#onWheel)
+    this.#wrapper.removeEventListener('pointerdown', this.#handlePointerDown)
+    this.#wrapper.removeEventListener('pointermove', this.#handlePointerMove)
+    this.#wrapper.removeEventListener('pointerup', this.#handlePointerEnd)
+    this.#wrapper.removeEventListener('pointercancel', this.#handlePointerEnd)
+    this.#wrapper.removeEventListener('wheel', this.#handleWheel)
   }
 }
