@@ -60,6 +60,10 @@ export function transform (
   }
 }
 
+export function determinant ({ a, b, c, d }: Transformation): number {
+  return a * d - b * c
+}
+
 export const identity: Transformation = {
   a: 1,
   b: 0,
