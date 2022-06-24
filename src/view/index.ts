@@ -14,7 +14,7 @@ import { getVisibleTiles, TileOptions } from './get-visible-tiles.ts'
 import { ImageCache } from './image-cache.ts'
 import { center } from './lat-long.ts'
 
-const MAP_TILE_SIZE = 256
+const MAP_TILE_SIZE = 512
 
 const tileOptions: TileOptions = {
   origin: center
@@ -40,7 +40,11 @@ export class MapView {
   #observer = new ResizeObserver((...args) => this.#onResize(...args))
   #size = { width: 0, height: 0 }
   #imageCache = new ImageCache(
-    'https://assets.concept3d.com/assets/1005/1005_Maps/',
+    'https://assets.concept3d.com/assets/1005/1005_Map_8/',
+    () => this.render()
+  )
+  #labelCache = new ImageCache(
+    'https://assets.concept3d.com/assets/1005/1005_Labels_5/',
     () => this.render()
   )
 
@@ -161,6 +165,13 @@ export class MapView {
     )) {
       this.#drawTile(
         this.#imageCache,
+        pixel,
+        tileSize,
+        MapView.MAX_ZOOM - zoom,
+        tile
+      )
+      this.#drawTile(
+        this.#labelCache,
         pixel,
         tileSize,
         MapView.MAX_ZOOM - zoom,
