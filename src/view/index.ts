@@ -88,27 +88,26 @@ export class MapView {
     const image = imageCache.request(`${zoom}/${tile.x}/${tile.y}`)
     if (image) {
       this.#context.drawImage(image, pixel.x, pixel.y, tileSize, tileSize)
-      this.#context.strokeStyle = 'red' // TEMP
-      this.#context.strokeRect(pixel.x, pixel.y, tileSize, tileSize)
       return
     }
 
-    let zoomOut = zoom
+    let tempZoom = zoom
+    let tempTile = tile
     let crop = zero
     let cropSize = MAP_TILE_SIZE
-    while (zoomOut > MapView.MIN_ZOOM) {
-      zoomOut--
+    while (tempZoom > MapView.MIN_ZOOM) {
+      tempZoom--
       cropSize /= 2
       crop = scale(
         sum(crop, {
-          x: (tile.x % 2) * MAP_TILE_SIZE,
-          y: (1 - (tile.y % 2)) * MAP_TILE_SIZE
+          x: (tempTile.x % 2) * MAP_TILE_SIZE,
+          y: (1 - (tempTile.y % 2)) * MAP_TILE_SIZE
         }),
         0.5
       )
-      tile = map(tile, comp => Math.floor(comp / 2))
+      tempTile = map(tempTile, comp => Math.floor(comp / 2))
 
-      const image = imageCache.get(`${zoomOut}/${tile.x}/${tile.y}`)
+      const image = imageCache.get(`${tempZoom}/${tempTile.x}/${tempTile.y}`)
       if (image) {
         this.#context.drawImage(
           image,
@@ -121,13 +120,29 @@ export class MapView {
           tileSize,
           tileSize
         )
-        this.#context.strokeStyle = 'green' // TEMP
-        this.#context.strokeRect(pixel.x, pixel.y, tileSize, tileSize)
         return
       }
     }
-    this.#context.strokeStyle = 'blue' // TEMP
-    this.#context.strokeRect(pixel.x, pixel.y, tileSize, tileSize)
+
+    if (zoom < MapView.MAX_ZOOM) {
+      // Only do fallback one level in
+      for (let x = 0; x < 2; x++) {
+        for (let y = 0; y < 2; y++) {
+          const image = imageCache.get(
+            `${zoom + 1}/${tile.x * 2 + x}/${tile.y * 2 + 1 - y}`
+          )
+          if (image) {
+            this.#context.drawImage(
+              image,
+              pixel.x + (x * tileSize) / 2,
+              pixel.y + (y * tileSize) / 2,
+              tileSize / 2,
+              tileSize / 2
+            )
+          }
+        }
+      }
+    }
   }
 
   render () {

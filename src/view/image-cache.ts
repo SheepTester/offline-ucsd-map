@@ -17,20 +17,14 @@ export class ImageCache {
   #images: Map<string, HTMLImageElement> = new Map()
   #imagesLoaded = false
   #loading: Set<string> = new Set()
-  #tempStopLoading = false // TEMP
 
   constructor (host: string, onImageLoad: () => void) {
     this.#host = host
     this.#onImageLoad = onImageLoad
-
-    setTimeout(() => {
-      this.#tempStopLoading = true
-      console.log('no more loading.')
-    }, 1000)
   }
 
   #load (path: string): void {
-    if (!this.#loading.has(path) && !this.#tempStopLoading) {
+    if (!this.#loading.has(path)) {
       if (this.#loading.size === 0) {
         window.requestAnimationFrame(this.#handleFrame)
       }
