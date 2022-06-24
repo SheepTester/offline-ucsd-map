@@ -11,29 +11,48 @@ function loadImage (url: string): Promise<HTMLImageElement> {
   })
 }
 
+/**
+ * Cap the number of images loading at once because loading a lot of images at
+ * once causes lag spikes.
+ */
+const CONCURRENT_LOAD_LIMIT = Infinity
+
 export class ImageCache {
   #host: string
   #onImageLoad: () => void
   #images: Map<string, HTMLImageElement> = new Map()
   #imagesLoaded = false
   #loading: Set<string> = new Set()
+  #loadQueue: string[] = []
 
   constructor (host: string, onImageLoad: () => void) {
     this.#host = host
     this.#onImageLoad = onImageLoad
   }
 
-  #load (path: string): void {
+  async #load (path: string): Promise<void> {
+    this.#loading.add(path)
+    const image = await loadImage(this.#host + path)
+    this.#loading.delete(path)
+    this.#images.set(path, image)
+    this.#imagesLoaded = true
+
+    const next = this.#loadQueue.shift()
+    if (next !== undefined) {
+      this.#load(next)
+    }
+  }
+
+  #tryLoad (path: string): void {
     if (!this.#loading.has(path)) {
       if (this.#loading.size === 0) {
         window.requestAnimationFrame(this.#handleFrame)
       }
-      this.#loading.add(path)
-      loadImage(this.#host + path).then(image => {
-        this.#loading.delete(path)
-        this.#images.set(path, image)
-        this.#imagesLoaded = true
-      })
+      if (this.#loading.size < CONCURRENT_LOAD_LIMIT) {
+        this.#load(path)
+      } else {
+        this.#loadQueue.push(path)
+      }
     }
   }
 
@@ -52,7 +71,7 @@ export class ImageCache {
   request (path: string): HTMLImageElement | null {
     const image = this.get(path)
     if (!image) {
-      this.#load(path)
+      this.#tryLoad(path)
     }
     return image
   }
