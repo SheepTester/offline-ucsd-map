@@ -50,7 +50,7 @@ export type TileOptions = {
 }
 
 export type Tile = {
-  rendered: Point
+  pixel: Point
   /**
    * Note that map tiles have an uninverted y axis, so positive y is upwards.
    */
@@ -127,8 +127,8 @@ export function getVisibleTiles (
         )
       ) {
         tiles.push({
-          rendered: { x, y },
-          tile: sum({ x: i, y: j }, tileOffset)
+          pixel: { x, y },
+          tile: { x: i + tileOffset.x, y: -1 - j - tileOffset.y }
         })
       }
     }

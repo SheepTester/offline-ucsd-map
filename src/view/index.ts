@@ -3,6 +3,7 @@
 /// <reference lib="deno.ns" />
 
 import { expect } from '../utils/expect.ts'
+import { map, Point, scale, sum, zero } from '../utils/point.ts'
 import {
   determinant,
   identity,
@@ -12,6 +13,8 @@ import {
 import { getVisibleTiles, TileOptions } from './get-visible-tiles.ts'
 import { ImageCache } from './image-cache.ts'
 import { center } from './lat-long.ts'
+
+const MAP_TILE_SIZE = 256
 
 const tileOptions: TileOptions = {
   origin: center
@@ -74,6 +77,59 @@ export class MapView {
     this.render()
   }
 
+  #drawTile (
+    imageCache: ImageCache,
+    { ...pixel }: Point,
+    tileSize: number,
+    zoom: number,
+    { ...tile }: Point
+  ) {
+    this.#context.lineWidth = 4
+    const image = imageCache.request(`${zoom}/${tile.x}/${tile.y}`)
+    if (image) {
+      this.#context.drawImage(image, pixel.x, pixel.y, tileSize, tileSize)
+      this.#context.strokeStyle = 'red' // TEMP
+      this.#context.strokeRect(pixel.x, pixel.y, tileSize, tileSize)
+      return
+    }
+
+    let zoomOut = zoom
+    let crop = zero
+    let cropSize = MAP_TILE_SIZE
+    while (zoomOut > MapView.MIN_ZOOM) {
+      zoomOut--
+      cropSize /= 2
+      crop = scale(
+        sum(crop, {
+          x: (tile.x % 2) * MAP_TILE_SIZE,
+          y: (1 - (tile.y % 2)) * MAP_TILE_SIZE
+        }),
+        0.5
+      )
+      tile = map(tile, comp => Math.floor(comp / 2))
+
+      const image = imageCache.get(`${zoomOut}/${tile.x}/${tile.y}`)
+      if (image) {
+        this.#context.drawImage(
+          image,
+          crop.x,
+          crop.y,
+          cropSize,
+          cropSize,
+          pixel.x,
+          pixel.y,
+          tileSize,
+          tileSize
+        )
+        this.#context.strokeStyle = 'green' // TEMP
+        this.#context.strokeRect(pixel.x, pixel.y, tileSize, tileSize)
+        return
+      }
+    }
+    this.#context.strokeStyle = 'blue' // TEMP
+    this.#context.strokeRect(pixel.x, pixel.y, tileSize, tileSize)
+  }
+
   render () {
     // NOTE: Could consider not clearing to hide the lines between squares
     this.#context.clearRect(0, 0, this.#size.width, this.#size.height)
@@ -82,16 +138,19 @@ export class MapView {
 
     const zoom = Math.max(Math.floor(-Math.log2(determinant(this.view)) / 2), 0)
     const tileSize = 2 ** zoom * 256
-    for (const {
-      rendered: { x, y },
-      tile
-    } of getVisibleTiles(tileOptions, this.view, this.#size, tileSize)) {
-      const image = this.#imageCache.request(
-        `${MapView.MAX_ZOOM - zoom}/${tile.x}/${-1 - tile.y}`
+    for (const { pixel, tile } of getVisibleTiles(
+      tileOptions,
+      this.view,
+      this.#size,
+      tileSize
+    )) {
+      this.#drawTile(
+        this.#imageCache,
+        pixel,
+        tileSize,
+        MapView.MAX_ZOOM - zoom,
+        tile
       )
-      if (image) {
-        this.#context.drawImage(image, x, y, tileSize, tileSize)
-      }
     }
 
     this.#context.restore()

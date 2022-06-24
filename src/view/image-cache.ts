@@ -17,14 +17,20 @@ export class ImageCache {
   #images: Map<string, HTMLImageElement> = new Map()
   #imagesLoaded = false
   #loading: Set<string> = new Set()
+  #tempStopLoading = false // TEMP
 
   constructor (host: string, onImageLoad: () => void) {
     this.#host = host
     this.#onImageLoad = onImageLoad
+
+    setTimeout(() => {
+      this.#tempStopLoading = true
+      console.log('no more loading.')
+    }, 1000)
   }
 
   #load (path: string): void {
-    if (!this.#loading.has(path)) {
+    if (!this.#loading.has(path) && !this.#tempStopLoading) {
       if (this.#loading.size === 0) {
         window.requestAnimationFrame(this.#handleFrame)
       }
@@ -38,16 +44,23 @@ export class ImageCache {
   }
 
   /**
+   * Returns the image if it's cached. Unlike `request`, it will not try loading
+   * the image if it's not cached.
+   */
+  get (path: string): HTMLImageElement | null {
+    return this.#images.get(path) ?? null
+  }
+
+  /**
    * Returns the image if it's cached, and if not, it'll start loading it and
    * return null.
    */
   request (path: string): HTMLImageElement | null {
-    const image = this.#images.get(path)
-    if (image) {
-      return image
+    const image = this.get(path)
+    if (!image) {
+      this.#load(path)
     }
-    this.#load(path)
-    return null
+    return image
   }
 
   #handleFrame = () => {

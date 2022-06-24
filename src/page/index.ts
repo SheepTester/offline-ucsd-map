@@ -10,17 +10,16 @@ import { center } from '../view/lat-long.ts'
 
 const wrapper = document.getElementById('map') ?? expect('Map wrapper')
 const view = new MapView(wrapper)
-// view.view = makeTransformation({
-//   translateX: center.x % 256,
-//   translateY: center.y % 256
-// })
+view.view = makeTransformation({
+  scale: 0.25
+})
 const interactive = new Interactive(wrapper, {
   get: () => view.view,
   set (transformation) {
     view.view = transformation
     view.render()
   },
-  scrollMode: true
+  scrollMode: false
 })
 
 Object.assign(window, { view, interactive })
