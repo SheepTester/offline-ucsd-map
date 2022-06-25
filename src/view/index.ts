@@ -53,7 +53,7 @@ export class MapView {
   static MIN_ZOOM = 11
   static MAX_ZOOM = 20
 
-  #wrapper: HTMLDivElement = document.createElement('div')
+  #transformationWrapper: HTMLDivElement = document.createElement('div')
   #observer = new ResizeObserver((...args) => this.#onResize(...args))
   #size = { width: 0, height: 0 }
   #layers: Layer[] = []
@@ -71,11 +71,11 @@ export class MapView {
         keep: new Set()
       }
       this.#layers.push(layer)
-      this.#wrapper.append(layer.wrapper)
+      this.#transformationWrapper.append(layer.wrapper)
     }
 
-    this.#wrapper.classList.add('transformation-wrapper')
-    wrapper.append(this.#wrapper)
+    this.#transformationWrapper.classList.add('transformation-wrapper')
+    wrapper.append(this.#transformationWrapper)
     this.#observer.observe(wrapper)
 
     this.options = {}
@@ -93,75 +93,7 @@ export class MapView {
     this.render()
   }
 
-  // #drawTile (
-  //   imageCache: ImageCache,
-  //   { ...pixel }: Point,
-  //   tileSize: number,
-  //   zoom: number,
-  //   { ...tile }: Point
-  // ) {
-  //   this.#context.lineWidth = 4
-  //   const image = imageCache.request(`${zoom}/${tile.x}/${tile.y}`)
-  //   if (image) {
-  //     this.#context.drawImage(image, pixel.x, pixel.y, tileSize, tileSize)
-  //     return
-  //   }
-
-  //   let tempZoom = zoom
-  //   let tempTile = tile
-  //   let crop = zero
-  //   let cropSize = MAP_TILE_SIZE
-  //   while (tempZoom > MapView.MIN_ZOOM) {
-  //     tempZoom--
-  //     cropSize /= 2
-  //     crop = scale(
-  //       sum(crop, {
-  //         x: (tempTile.x % 2) * MAP_TILE_SIZE,
-  //         y: (1 - (tempTile.y % 2)) * MAP_TILE_SIZE
-  //       }),
-  //       0.5
-  //     )
-  //     tempTile = map(tempTile, comp => Math.floor(comp / 2))
-
-  //     const image = imageCache.get(`${tempZoom}/${tempTile.x}/${tempTile.y}`)
-  //     if (image) {
-  //       this.#context.drawImage(
-  //         image,
-  //         crop.x,
-  //         crop.y,
-  //         cropSize,
-  //         cropSize,
-  //         pixel.x,
-  //         pixel.y,
-  //         tileSize,
-  //         tileSize
-  //       )
-  //       return
-  //     }
-  //   }
-
-  //   if (zoom < MapView.MAX_ZOOM) {
-  //     // Only do fallback one level in
-  //     for (let x = 0; x < 2; x++) {
-  //       for (let y = 0; y < 2; y++) {
-  //         const image = imageCache.get(
-  //           `${zoom + 1}/${tile.x * 2 + x}/${tile.y * 2 + 1 - y}`
-  //         )
-  //         if (image) {
-  //           this.#context.drawImage(
-  //             image,
-  //             pixel.x + (x * tileSize) / 2,
-  //             pixel.y + (y * tileSize) / 2,
-  //             tileSize / 2,
-  //             tileSize / 2
-  //           )
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
-  #createImage (
+  #requireTile (
     layer: Layer,
     zoom: number,
     position: Point,
@@ -170,42 +102,61 @@ export class MapView {
   ): void {
     const path = `${zoom}/${tile.x}/${tile.y}`
     layer.keep.add(path)
+
     let image = layer.images.get(path)
-    if (image) {
-      return
+    if (!image) {
+      image = document.createElement('img')
+      image.style.left = `${position.x}px`
+      image.style.top = `${position.y}px`
+      image.width = tileSize
+      image.height = tileSize
+      image.draggable = false
+      image.src = layer.host + path
+      layer.images.set(path, image)
+
+      // Insert into zoom level layer; more zoomed in tiles (higher quality, but
+      // smaller) should show on top of zoomed out tiles
+      let marker = layer.markers.get(zoom)
+      if (marker) {
+        marker.after(image)
+      } else {
+        let tempZoom = zoom
+        while (!marker && tempZoom < MapView.MAX_ZOOM) {
+          tempZoom++
+          marker = layer.markers.get(tempZoom)
+        }
+        if (marker) {
+          marker.before(image)
+        } else {
+          layer.wrapper.append(image)
+        }
+        layer.markers.set(zoom, image)
+      }
     }
 
-    image = document.createElement('img')
-    image.style.left = `${position.x}px`
-    image.style.top = `${position.y}px`
-    image.width = tileSize
-    image.height = tileSize
-    image.draggable = false
-    image.src = layer.host + path
-    layer.images.set(path, image)
-
-    // Insert into zoom level layer; more zoomed in tiles (higher quality, but
-    // smaller) should show on top of zoomed out tiles
-    let marker = layer.markers.get(zoom)
-    if (marker) {
-      marker.after(image)
-    } else {
+    if (!image.complete) {
+      // Require fallbacks if they exist
       let tempZoom = zoom
-      while (!marker && tempZoom < MapView.MAX_ZOOM) {
-        tempZoom++
-        marker = layer.markers.get(tempZoom)
+      let tempTile = tile
+      while (tempZoom > MapView.MIN_ZOOM) {
+        tempZoom--
+        tempTile = map(tempTile, comp => Math.floor(comp / 2))
+        layer.keep.add(`${tempZoom}/${tempTile.x}/${tempTile.y}`)
       }
-      if (marker) {
-        marker.before(image)
-      } else {
-        layer.wrapper.append(image)
+
+      if (zoom < MapView.MAX_ZOOM) {
+        // Only do fallback one level in
+        for (let x = 0; x < 2; x++) {
+          for (let y = 0; y < 2; y++) {
+            layer.keep.add(`${zoom + 1}/${tile.x * 2 + x}/${tile.y * 2 + y}`)
+          }
+        }
       }
-      layer.markers.set(zoom, image)
     }
   }
 
   render (): void {
-    this.#wrapper.style.transform = toCss(this.view)
+    this.#transformationWrapper.style.transform = toCss(this.view)
     const zoom = Math.max(Math.floor(-Math.log2(determinant(this.view)) / 2), 0)
     const tileSize = 2 ** zoom * 256
 
@@ -216,7 +167,7 @@ export class MapView {
       tileSize
     )) {
       for (const layer of this.#layers) {
-        this.#createImage(
+        this.#requireTile(
           layer,
           MapView.MAX_ZOOM - zoom,
           position,
