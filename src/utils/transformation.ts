@@ -79,7 +79,7 @@ export const identity: Transformation = {
  * not how I like to think about matrices, so unfortunately `b` and `c` are
  * swapped.
  */
-export type CssTransformation = [
+export type JsTransformation = [
   a: number,
   b: number,
   c: number,
@@ -87,16 +87,18 @@ export type CssTransformation = [
   e: number,
   f: number
 ]
-
-export function toCss ({
+export function toJs ({
   a,
   b,
   c,
   d,
   tx,
   ty
-}: Transformation): CssTransformation {
+}: Transformation): JsTransformation {
   return [a, c, b, d, tx, ty]
+}
+export function toCss (transformation: Transformation): string {
+  return `matrix(${toJs(transformation).join(', ')})`
 }
 
 export type TransformationOptions = {
